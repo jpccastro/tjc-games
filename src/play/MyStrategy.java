@@ -12,10 +12,11 @@ import gametree.GameNodeDoesNotExistException;
 import play.exception.InvalidStrategyException;
 
 /**********************************************************************************
- * This strategy implements a modified version of the well-known tit-for-tat.
- * The first move is random, and all subsequent ones simply mimic the opponent's
- * previous move.
+ * This strategy is known as gradual tit-for-tat. We start by cooperating, but for
+ * every n-th time our opponent defects we also defect n times, followed by cooperating
+ * twice, trying to convince our opponent to cooperate too.
  *
+ * In the last round we always defect, as there's no advantage in playing nice anymore.
  **********************************************************************************/
 public class MyStrategy extends Strategy {
 
@@ -32,6 +33,8 @@ public class MyStrategy extends Strategy {
 
 	private int timesToCooperateAsP1 = 0;
 	private int timesToCooperateAsP2 = 0;
+
+	private int numberOfTimesPlayed = 0;
 
 	private List<GameNode> getReversePath(GameNode current) {
 		try {
@@ -186,48 +189,16 @@ public class MyStrategy extends Strategy {
 			}
 		}
 
-
-		//We now set our strategy to have a probability of 1.0 for the moves used
-		//by our adversary in the previous round and zero for the remaining ones.
-		Iterator<String> myMoves = myStrategy.keyIterator();
-		// List<String> myMovesAsP1 = new ArrayList<>();
-		// List<String> myMovesAsP2 = new ArrayList<>();
-
-		// myMoves.forEachRemaining(move -> {
-		// 	if(move.charAt(0) == '1') {
-		// 		myMovesAsP1.add(move);
-		// 	} else {
-		// 		myMovesAsP2.add(move);
-		// 	}
-		// });
-
-		// myMoves = myStrategy.keyIterator(); //reset iterator
-
-		// System.out.println("My moves as P1");
-		// myMovesAsP1.forEach(move -> {
-		// 	System.out.println(move);
-		// });
-
-		// System.out.println("Moves as P2");
-		// myMovesAsP2.forEach(move -> {
-		// 	System.out.println(move);
-		// });
-
-		// while(myMoves.hasNext()) {
-		// 	String k = myMoves.next();
-		// 	if(opponentMoves.contains(k)) {
-		// 		myStrategy.put(k, Double.valueOf(1));
-		// 		System.err.println("Setting " + k + " to prob 1.0");
-		// 	} else {
-		// 		myStrategy.put(k, Double.valueOf(0));
-		// 		System.err.println("Setting " + k + " to prob 0.0");
-		// 	}
-		// }
-
+		//There's no advantage in playing nice on the last iteration so we always defect
+		if(myStrategy.getMaximumNumberOfIterations() == 1) {
+			defect(myStrategy, 1);
+			defect(myStrategy, 2);
+		}
 
 		//The following piece of code has the goal of checking if there was a portion
 		//of the game for which we could not infer the moves of the adversary (because
 		//none of the games in the previous round pass through those paths)
+		Iterator<String> myMoves = myStrategy.keyIterator();
 		Iterator<Integer> validationSetIte = tree.getValidationSet().iterator();
 		myMoves = myStrategy.keyIterator();
 		while(validationSetIte.hasNext()) {
@@ -258,6 +229,7 @@ public class MyStrategy extends Strategy {
 
 		}
 
+		numberOfTimesPlayed++;
 	}
 
 
@@ -299,29 +271,12 @@ public class MyStrategy extends Strategy {
 
 				if(finalP1 == null || finalP2 == null) {
 					//This is the first round so we always cooperate.
+					System.out.println("Max iterations: " + myStrategy.getMaximumNumberOfIterations());
 					cooperate(myStrategy, 1);
 					cooperate(myStrategy, 2);
-
-					// while(iterator.hasNext()) {
-					// 	double[] moves = new double[iterator.next()];
-					// 	double sum = 0;
-					// 	for(int i = 0; i < moves.length - 1; i++) {
-					// 		moves[i] = 1.0;
-					// 		while(sum + moves[i] >= 1) moves[i] = random.nextDouble();
-					// 		sum = sum + moves[i];
-					// 	}
-					// 	moves[moves.length-1] = ((double) 1) - sum;
-
-					// 	for(int i = 0; i < moves.length; i++) {
-					// 		if(!keys.hasNext()) {
-					// 			System.err.println("PANIC: Strategy structure does not match the game.");
-					// 			return;
-					// 		}
-					// 		myStrategy.put(keys.next(), moves[i]);
-					// 	}
-					// }
+					numberOfTimesPlayed++;
 				} else {
-					//Lets mimic our adversary strategy (at least what we can infer)
+					//Use my strategy
 					List<GameNode> listP1 = getReversePath(finalP1);
 					List<GameNode> listP2 = getReversePath(finalP2);
 
