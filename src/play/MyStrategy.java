@@ -34,8 +34,6 @@ public class MyStrategy extends Strategy {
 	private int timesToCooperateAsP1 = 0;
 	private int timesToCooperateAsP2 = 0;
 
-	private int numberOfTimesPlayed = 0;
-
 	private List<GameNode> getReversePath(GameNode current) {
 		try {
 			GameNode n = current.getAncestor();
@@ -228,8 +226,6 @@ public class MyStrategy extends Strategy {
 			}
 
 		}
-
-		numberOfTimesPlayed++;
 	}
 
 
@@ -266,15 +262,11 @@ public class MyStrategy extends Strategy {
 						System.out.println("Terminal node in last round as P2: " + finalP2);
 				}
 
-				Iterator<Integer> iterator = tree.getValidationSet().iterator();
-				Iterator<String> keys = myStrategy.keyIterator();
-
 				if(finalP1 == null || finalP2 == null) {
 					//This is the first round so we always cooperate.
 					System.out.println("Max iterations: " + myStrategy.getMaximumNumberOfIterations());
 					cooperate(myStrategy, 1);
 					cooperate(myStrategy, 2);
-					numberOfTimesPlayed++;
 				} else {
 					//Use my strategy
 					List<GameNode> listP1 = getReversePath(finalP1);
